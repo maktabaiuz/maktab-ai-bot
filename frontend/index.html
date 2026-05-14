@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>MAKTAB AI</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-container": "#ffc800",
+            "surface": "#fff8f1",
+            "primary": "#755b00",
+            "primary-fixed-dim": "#f4bf00",
+            "surface-container": "#f7eddb",
+            "surface-container-high": "#f1e7d5",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#201b10",
+            "on-surface-variant": "#4f4632",
+            "on-secondary-container": "#636262",
+            "on-primary-container": "#6e5500",
+            "inverse-surface": "#353024",
+            "inverse-on-surface": "#faefde",
+            "background": "#fff8f1",
+            "outline": "#81765f",
+            "outline-variant": "#d2c5ab",
+            "secondary": "#5f5e5e",
+            "surface-dim": "#e3d9c7",
+            "tertiary": "#006875",
+          },
+          spacing: {
+            "container-margin": "20px",
+            "stack-md": "16px",
+            "stack-sm": "8px",
+            "gutter": "16px",
+            "section-gap": "32px",
+          },
+          fontSize: {
+            "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+            "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+            "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+            "headline-lg-mobile": ["26px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "headline-sm": ["20px", { lineHeight: "26px", fontWeight: "600" }],
+            "headline-md": ["24px", { lineHeight: "30px", fontWeight: "700" }],
+            "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #fff8f1;
+      overflow: hidden;
+      height: 100dvh;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* ===== SCREEN SWITCHING ===== */
+    .screen {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      bottom: 72px;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .screen.active { display: flex; }
+    .screen-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .screen-scroll::-webkit-scrollbar { display: none; }
+
+    /* ===== BOTTOM NAV ===== */
+    .nav-item { color: #c8c6c5; transition: color 0.2s; }
+    .nav-item.active { color: #ffc800; }
+    .nav-item .ms-fill {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .nav-item.active .ms-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* ===== CHAT ===== */
+    .messages-area {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .messages-area::-webkit-scrollbar { display: none; }
+    .msg-animate { animation: msgIn 0.2s ease; }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .typing-dot {
+      width: 7px; height: 7px;
+      background: #81765f;
+      border-radius: 50%;
+      animation: typingAnim 1s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingAnim {
+      0%,60%,100% { transform: translateY(0); opacity:0.4; }
+      30%          { transform: translateY(-5px); opacity:1; }
+    }
+
+    /* ===== GRADE GRID ===== */
+    .grade-btn {
+      display: flex; align-items: center; justify-content: center;
+      height: 48px;
+      border: 2px solid #d2c5ab;
+      border-radius: 0.75rem;
+      font-weight: 700; font-size: 15px;
+      color: #201b10; background: white;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .grade-btn.selected { background: #ffc800; border-color: #ffc800; }
+    .grade-btn:active { transform: scale(0.94); }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed; bottom: 88px; left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: #353024; color: #faefde;
+      padding: 10px 22px; border-radius: 9999px;
+      font-size: 14px; font-weight: 600;
+      opacity: 0; transition: all 0.3s ease;
+      pointer-events: none; white-space: nowrap; z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== LOADING ===== */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      z-index: 1000;
+    }
+    .loading-spinner {
+      width: 44px; height: 44px;
+      border: 4px solid rgba(255,200,0,0.3);
+      border-top-color: #ffc800;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; z-index: 200;
+    }
+
+    /* ===== CHART ===== */
+    .chart-bar {
+      flex: 1; background: #f1e7d5;
+      border-radius: 4px 4px 0 0; min-height: 4px;
+      transition: height 0.5s ease;
+    }
+    .chart-bar.today { background: #ffc800; }
+
+    /* ===== TEST OPTIONS ===== */
+    .test-option {
+      width: 100%; padding: 12px 16px;
+      background: #f7eddb; border: 2px solid transparent;
+      border-radius: 0.75rem; font-size: 14px; font-weight: 600;
+      color: #201b10; cursor: pointer; text-align: left;
+      transition: all 0.15s;
+    }
+    .test-option:active { transform: scale(0.98); }
+    .test-option.correct { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+    .test-option.wrong   { background: #ffebee; border-color: #f44336; color: #c62828; }
+  </style>
+</head>
+<body>
+
+<!-- ===== HOME SCREEN ===== -->
+<div class="screen active" id="screen-home">
+  <header class="bg-surface shadow-sm flex items-center justify-between px-5 flex-shrink-0" style="height:64px;">
+    <img src="images/logo.png" alt="MAKTAB AI" style="height:36px;object-fit:contain;" />
+    <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center border-2 border-[#f4bf00]">
+      <span class="material-symbols-outlined text-primary" style="font-size:20px;">person</span>
+    </div>
+  </header>
+
+  <div class="screen-scroll px-5 pt-4 pb-4">
+    <!-- Hero -->
+    <div class="rounded-2xl p-5 mb-5 relative overflow-hidden" style="background:linear-gradient(135deg,#ffc800 0%,#e6b400 100%);">
+      <div class="absolute right-3 top-2 opacity-15" style="width:80px;height:80px;">
+        <img src="images/icon.png" style="width:100%;height:100%;object-fit:contain;" />
+      </div>
+      <p class="text-label-sm uppercase tracking-wider mb-1" style="color:#594400;">Xayrli kun! 👋</p>
+      <h2 class="text-headline-lg-mobile font-bold mb-1" style="color:#241a00;" id="welcome-name">Salom!</h2>
+      <p class="text-label-md" style="color:#594400;" id="welcome-sub">O'zbekiston maktab dasturi asosida AI mentor</p>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="grid grid-cols-3 gap-3 mb-5">
+      <div class="bg-surface-container-lowest rounded-xl p-3 text-center shadow-sm border border-outline-variant/20">
+        <div class="font-bold text-primary" style="font-size:22px;" id="home-streak">0</div>
+        <div class="text-label-sm text-on-secondary-container mt-1">kunlik</div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-xl p-3 text-center shadow-sm border border-outline-variant/20">
+        <div class="font-bold text-primary" style="font-size:22px;" id="home-time">0</div>
+        <div class="text-label-sm text-on-secondary-container mt-1">daqiqa</div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-xl p-3 text-center shadow-sm border border-outline-variant/20">
+        <div class="font-bold text-primary" style="font-size:22px;" id="home-tests">0</div>
+        <div class="text-label-sm text-on-secondary-container mt-1">test</div>
+      </div>
+    </div>
+
+    <!-- News -->
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-label-sm text-on-secondary-container uppercase tracking-wider">Yangiliklar</span>
+    </div>
+    <div class="space-y-3 mb-5" id="news-list">
+      <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#FFEB3B;">
+          <span class="material-symbols-outlined" style="color:#7F6E00;font-size:20px;">school</span>
+        </div>
+        <div>
+          <div class="text-body-md font-bold text-on-surface">Yangi o'quv yili boshlanmoqda</div>
+          <div class="text-label-sm text-on-secondary-container mt-0.5">14 May 2026</div>
+        </div>
+      </div>
+      <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#2196F3;">
+          <span class="material-symbols-outlined text-white" style="font-size:20px;">calculate</span>
+        </div>
+        <div>
+          <div class="text-body-md font-bold text-on-surface">Matematika olimpiadasi e'lon qilindi</div>
+          <div class="text-label-sm text-on-secondary-container mt-0.5">12 May 2026</div>
+        </div>
+      </div>
+      <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform">
+        <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#4CAF50;">
+          <span class="material-symbols-outlined text-white" style="font-size:20px;">history_edu</span>
+        </div>
+        <div>
+          <div class="text-body-md font-bold text-on-surface">O'quvchilar uchun yangi imtihon qoidalari</div>
+          <div class="text-label-sm text-on-secondary-container mt-0.5">10 May 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="navigateTo('student')"
+      class="w-full bg-primary-container text-[#241a00] rounded-2xl font-bold shadow-md active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
+      style="height:56px;font-size:16px;letter-spacing:0.3px;">
+      <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1,'wght' 700,'GRAD' 0,'opsz' 24;">school</span>
+      DARS BOSHLASH
+    </button>
+  </div>
+</div>
+
+<!-- ===== STUDENT SCREEN ===== -->
+<div class="screen" id="screen-student">
+  <header class="bg-surface shadow-sm flex items-center justify-between px-5 flex-shrink-0" style="height:64px;">
+    <div class="flex items-center gap-3">
+      <button class="p-2 rounded-full hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-primary">menu</span>
+      </button>
+      <h1 class="text-headline-sm font-bold text-primary">MAKTAB AI</h1>
+    </div>
+    <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center border-2 border-[#f4bf00]">
+      <span class="material-symbols-outlined text-primary" style="font-size:20px;">person</span>
+    </div>
+  </header>
+
+  <div class="screen-scroll px-5 pt-4 pb-4">
+
+    <!-- Setup form -->
+    <div id="setup-form">
+      <div class="mb-6">
+        <h2 class="text-headline-lg-mobile font-bold text-on-surface mb-1">Xush kelibsiz!</h2>
+        <p class="text-body-md text-on-surface-variant">Ma'lumotlaringizni kiriting va darslarni boshlang.</p>
+      </div>
+      <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 space-y-4 mb-5">
+        <div class="space-y-2">
+          <label class="text-label-md text-on-surface-variant">Ismingiz</label>
+          <input id="input-name" type="text" placeholder="Masalan: Azizbek"
+            class="w-full px-4 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all text-body-md text-on-surface"
+            style="height:48px;" />
+        </div>
+        <div class="space-y-2">
+          <label class="text-label-md text-on-surface-variant">Sinfingiz</label>
+          <div class="grid grid-cols-4 gap-2" id="grade-grid"></div>
+        </div>
+      </div>
+      <button onclick="saveStudentInfo()"
+        class="w-full bg-primary-container text-[#241a00] rounded-2xl font-bold shadow-md active:scale-[0.97] transition-transform flex items-center justify-center"
+        style="height:56px;font-size:16px;">
+        Davom etish
+      </button>
+    </div>
+
+    <!-- Subject list -->
+    <div id="subject-list" style="display:none;">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-headline-lg-mobile font-bold text-on-surface">Fanlar</h2>
+          <p class="text-label-sm text-on-surface-variant mt-0.5" id="student-info-text"></p>
+        </div>
+        <button onclick="resetStudent()"
+          class="px-3 py-1.5 rounded-full bg-surface-container text-label-sm text-on-surface-variant font-semibold">
+          Tahrirlash
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-label-sm text-on-secondary-container uppercase tracking-wider" id="grade-subjects-label"></span>
+      </div>
+
+      <div class="space-y-3" id="subjects-grid"></div>
+
+      <!-- AI tip -->
+      <div class="mt-8 p-4 rounded-2xl border border-primary-container/30 flex gap-4 items-start shadow-sm" style="background:#FFF9E6;">
+        <div class="w-10 h-10 bg-primary-container rounded-full flex-shrink-0 flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary-container"
+            style="font-size:20px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">smart_toy</span>
+        </div>
+        <div>
+          <h4 class="text-label-md text-on-primary-container mb-1">AI Maslahati</h4>
+          <p class="text-body-md text-on-surface-variant">Bugun biror fanni tanlang va darsni boshlang! Har kuni o'rganish — muvaffaqiyat kaliti.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHAT SCREEN ===== -->
+<div class="screen" id="screen-chat" style="background:#fff8f1;">
+  <header class="bg-surface shadow-sm flex items-center justify-between px-5 flex-shrink-0" style="height:64px;">
+    <div class="flex items-center gap-3">
+      <button onclick="navigateTo('student')" class="p-2 rounded-full hover:bg-surface-container-high transition-colors active:scale-95">
+        <span class="material-symbols-outlined text-primary">arrow_back</span>
+      </button>
+      <div>
+        <h1 class="text-headline-sm font-bold text-primary" id="chat-subject-name">Fan</h1>
+        <span class="text-label-sm text-on-surface-variant flex items-center gap-1">
+          <span class="w-2 h-2 bg-primary rounded-full inline-block"></span>
+          <span id="chat-grade-label">4-sinf</span>
+        </span>
+      </div>
+    </div>
+    <button onclick="startTest()" id="test-btn"
+      class="px-4 py-2 rounded-full bg-inverse-surface text-[#ffc800] text-label-md font-bold active:scale-95 transition-transform">
+      📝 Test
+    </button>
+  </header>
+
+  <!-- Messages -->
+  <div class="messages-area px-5 py-4 flex flex-col gap-3" id="messages-area">
+    <div class="flex flex-col items-start max-w-[85%] msg-animate">
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary-container"
+            style="font-size:14px;font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">smart_toy</span>
+        </div>
+        <span class="text-label-sm text-on-surface-variant">MAKTAB AI</span>
+      </div>
+      <div class="bg-surface-container-lowest shadow-sm rounded-tr-2xl rounded-br-2xl rounded-bl-2xl p-4 border border-surface-container">
+        <p class="text-body-md text-on-surface">Salom! Men <strong>MAKTAB AI</strong>man. Savolingizni bering, men tushuntirib beraman! 😊</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test area -->
+  <div id="test-area" style="display:none;"
+    class="mx-5 mb-2 bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline-variant/20 flex-shrink-0">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-label-md font-bold text-on-surface">📝 Test rejimi</span>
+      <span class="text-label-sm text-on-surface-variant" id="test-progress">1/5</span>
+    </div>
+    <p class="text-body-md text-on-surface font-semibold mb-3" id="test-question"></p>
+    <div class="space-y-2" id="test-options"></div>
+  </div>
+
+  <!-- Input -->
+  <div class="flex-shrink-0 px-5 py-3 bg-surface/90 backdrop-blur-sm border-t border-outline-variant/20">
+    <div class="flex items-center gap-3">
+      <textarea id="chat-input" rows="1" placeholder="Savol yo'llang..."
+        class="flex-1 bg-surface-container border border-outline-variant rounded-2xl px-4 py-3 focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/20 transition-all text-body-md text-on-surface resize-none"
+        style="min-height:48px;max-height:100px;"
+        onkeydown="handleEnter(event)" oninput="autoResize(this)"></textarea>
+      <button onclick="sendMessage()"
+        class="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-md active:scale-90 transition-transform flex-shrink-0">
+        <span class="material-symbols-outlined"
+          style="font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;">send</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PARENT SCREEN ===== -->
+<div class="screen" id="screen-parent">
+  <header class="bg-surface shadow-sm flex items-center justify-between px-5 flex-shrink-0" style="height:64px;">
+    <div class="flex items-center gap-3">
+      <button class="p-2 rounded-full hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-primary">menu</span>
+      </button>
+      <h1 class="text-headline-sm font-bold text-primary">Ota-ona paneli</h1>
+    </div>
+    <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center border-2 border-[#f4bf00]">
+      <span class="material-symbols-outlined text-primary" style="font-size:20px;">person</span>
+    </div>
+  </header>
+
+  <div class="screen-scroll px-5 pt-4 pb-4">
+    <!-- Children -->
+    <div class="mb-5">
+      <span class="text-label-sm text-on-secondary-container uppercase tracking-wider">Farzandlar</span>
+      <div class="space-y-3 mt-3" id="children-list">
+        <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-2 border-primary-container flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform" onclick="selectChild(this,'Alibek')">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background:#FFEB3B;">
+            <span class="material-symbols-outlined" style="color:#7F6E00;">face</span>
+          </div>
+          <div class="flex-1">
+            <div class="text-body-md font-bold text-on-surface">Alibek</div>
+            <div class="text-label-sm text-on-secondary-container">4-sinf</div>
+          </div>
+          <span class="text-label-sm font-bold" style="color:#4caf50;">● Online</span>
+        </div>
+        <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform" onclick="selectChild(this,'Malika')">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style="background:#E1BEE7;">
+            <span class="material-symbols-outlined" style="color:#6A1B9A;">face_3</span>
+          </div>
+          <div class="flex-1">
+            <div class="text-body-md font-bold text-on-surface">Malika</div>
+            <div class="text-label-sm text-on-secondary-container">7-sinf</div>
+          </div>
+          <span class="text-label-sm text-on-secondary-container">● Offline</span>
+        </div>
+        <button onclick="showAddChild()"
+          class="w-full p-4 rounded-xl border-2 border-dashed border-outline-variant/50 text-label-md text-on-surface-variant font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+          <span class="material-symbols-outlined" style="font-size:20px;">add</span>
+          Farzand qo'shish
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mb-5">
+      <span class="text-label-sm text-on-secondary-container uppercase tracking-wider">Bugungi faoliyat</span>
+      <div class="grid grid-cols-4 gap-2 mt-3">
+        <div class="bg-surface-container-lowest rounded-xl p-3 text-center shadow-sm border border-outline-variant/20">
+          <div class="font-bold text-primary" style="font-size:20px;" id="stat-time">45</div>
+          <div class="text-label-sm text-on-secondary-container mt-1">daqiqa</div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl p-3 text-center shadow-sm border border-outline-variant/20">
+          <div class="font-bold text-primary" style="font-size:20px;" id="stat-messages">23</div>
+          <div class="text-label-sm text-on-secondary-container mt-1">savol</div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl p-3 text-center shadow-sm border border-outline-variant/20">
+          <div class="font-bold text-primary" style="font-size:20px;" id="stat-tests">2</div>
+          <div class="text-label-sm text-on-secondary-container mt-1">test</div>
+        </div>
+        <div class="bg-surface-container-lowest rounded-xl p-3 text-center shadow-sm border border-outline-variant/20">
+          <div class="font-bold text-primary" style="font-size:20px;" id="stat-score">8.5</div>
+          <div class="text-label-sm text-on-secondary-container mt-1">ball</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="mb-5">
+      <span class="text-label-sm text-on-secondary-container uppercase tracking-wider">Haftalik faoliyat</span>
+      <div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 mt-3">
+        <div class="flex items-end gap-2 mb-2" style="height:80px;" id="chart-bars"></div>
+        <div class="flex justify-around text-label-sm text-on-secondary-container">
+          <span>Du</span><span>Se</span><span>Ch</span><span>Pa</span>
+          <span>Ju</span><span>Sh</span><span>Ya</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div>
+      <span class="text-label-sm text-on-secondary-container uppercase tracking-wider">Oxirgi faoliyat</span>
+      <div class="space-y-3 mt-3" id="activity-list">
+        <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#2196F3;">
+            <span class="material-symbols-outlined text-white" style="font-size:20px;">calculate</span>
+          </div>
+          <div class="flex-1">
+            <div class="text-body-md font-bold text-on-surface">Matematika</div>
+            <div class="text-label-sm text-on-secondary-container">8/10 ball • 20 daqiqa</div>
+          </div>
+          <div class="text-label-sm text-on-secondary-container">15:30</div>
+        </div>
+        <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#FFEB3B;">
+            <span class="material-symbols-outlined" style="color:#7F6E00;font-size:20px;">translate</span>
+          </div>
+          <div class="flex-1">
+            <div class="text-body-md font-bold text-on-surface">O'zbek tili</div>
+            <div class="text-label-sm text-on-secondary-container">15 savol berildi</div>
+          </div>
+          <div class="text-label-sm text-on-secondary-container">13:15</div>
+        </div>
+        <div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:#673AB7;">
+            <span class="material-symbols-outlined text-white" style="font-size:20px;">language</span>
+          </div>
+          <div class="flex-1">
+            <div class="text-body-md font-bold text-on-surface">Ingliz tili</div>
+            <div class="text-label-sm text-on-secondary-container">7/10 ball • 10 daqiqa</div>
+          </div>
+          <div class="text-label-sm text-on-secondary-container">11:00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center bg-inverse-surface z-50 shadow-lg"
+  style="height:72px;" id="bottom-nav">
+  <button onclick="navigateTo('home')" data-screen="home"
+    class="nav-item active flex flex-col items-center gap-0.5 px-4 py-2 active:scale-90 transition-transform">
+    <span class="material-symbols-outlined ms-fill" style="font-size:24px;">home</span>
+    <span style="font-size:11px;font-weight:600;">Asosiy</span>
+  </button>
+  <button onclick="navigateTo('student')" data-screen="student"
+    class="nav-item flex flex-col items-center gap-0.5 px-4 py-2 active:scale-90 transition-transform">
+    <span class="material-symbols-outlined ms-fill" style="font-size:24px;">school</span>
+    <span style="font-size:11px;font-weight:600;">O'qish</span>
+  </button>
+  <button onclick="navigateTo('chat')" data-screen="chat"
+    class="nav-item flex flex-col items-center gap-0.5 px-4 py-2 active:scale-90 transition-transform">
+    <span class="material-symbols-outlined ms-fill" style="font-size:24px;">forum</span>
+    <span style="font-size:11px;font-weight:600;">AI Chat</span>
+  </button>
+  <button onclick="navigateTo('parent')" data-screen="parent"
+    class="nav-item flex flex-col items-center gap-0.5 px-4 py-2 active:scale-90 transition-transform">
+    <span class="material-symbols-outlined ms-fill" style="font-size:24px;">group</span>
+    <span style="font-size:11px;font-weight:600;">Ota-ona</span>
+  </button>
+</nav>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading-overlay" style="display:none;">
+  <div class="loading-spinner"></div>
+  <div style="color:#faefde;font-size:16px;font-weight:600;">AI fikrlamoqda...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Add child modal -->
+<div class="modal-overlay" id="add-child-modal" style="display:none;">
+  <div class="bg-surface rounded-t-3xl p-6 w-full">
+    <h3 class="text-headline-sm font-bold text-on-surface mb-5">Farzand qo'shish</h3>
+    <div class="space-y-4 mb-5">
+      <div class="space-y-2">
+        <label class="text-label-md text-on-surface-variant">Ismi</label>
+        <input id="child-name" type="text" placeholder="Farzandingiz ismi"
+          class="w-full px-4 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary-container transition-all text-body-md"
+          style="height:48px;" />
+      </div>
+      <div class="space-y-2">
+        <label class="text-label-md text-on-surface-variant">Sinfi</label>
+        <select id="child-grade"
+          class="w-full px-4 rounded-lg border border-outline-variant bg-surface focus:outline-none focus:border-primary-container transition-all text-body-md appearance-none"
+          style="height:48px;">
+          <option value="">Sinf tanlang</option>
+          <option>1-sinf</option><option>2-sinf</option><option>3-sinf</option>
+          <option>4-sinf</option><option>5-sinf</option><option>6-sinf</option>
+          <option>7-sinf</option><option>8-sinf</option><option>9-sinf</option>
+          <option>10-sinf</option><option>11-sinf</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="closeModal()"
+        class="flex-1 rounded-xl bg-surface-container text-on-surface text-label-md font-semibold active:scale-95 transition-transform"
+        style="height:48px;">Bekor qilish</button>
+      <button onclick="addChild()"
+        class="flex-1 rounded-xl bg-primary-container text-[#241a00] text-label-md font-bold active:scale-95 transition-transform"
+        style="height:48px;">Qo'shish</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/telegram.js"></script>
+<script src="js/api.js"></script>
+<script src="js/gemini.js"></script>
+<script src="js/screens/home.js"></script>
+<script src="js/screens/student.js"></script>
+<script src="js/screens/chat.js"></script>
+<script src="js/screens/parent.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
