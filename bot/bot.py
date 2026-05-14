@@ -6,7 +6,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-WEBAPP_URL = os.getenv("WEBAPP_URL", "https://maktabaiuz.github.io/maktab-ai")
+WEBAPP_URL = os.getenv("WEBAPP_URL", "https://maktab-ai-one.vercel.app")
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 
 
