@@ -1,9 +1,13 @@
 import os
+import time
 import logging
 from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 WEBAPP_URL = os.getenv("WEBAPP_URL", "https://maktab-ai-one.vercel.app")
@@ -50,12 +54,17 @@ def main():
         logger.error("TELEGRAM_BOT_TOKEN topilmadi!")
         return
 
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_cmd))
-
-    logger.info("Bot ishga tushdi...")
-    app.run_polling(drop_pending_updates=True)
+    while True:
+        try:
+            logger.info("Bot ishga tushmoqda...")
+            app = ApplicationBuilder().token(BOT_TOKEN).build()
+            app.add_handler(CommandHandler("start", start))
+            app.add_handler(CommandHandler("help", help_cmd))
+            app.run_polling(drop_pending_updates=True)
+        except Exception as e:
+            logger.error(f"Bot xatosi: {e}")
+            logger.info("5 soniyadan keyin qayta uriniladi...")
+            time.sleep(5)
 
 
 if __name__ == "__main__":
