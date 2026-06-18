@@ -1,8 +1,12 @@
 import os
 import time
 import logging
+from pathlib import Path
+from dotenv import load_dotenv
 from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,35 +22,55 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     name = user.first_name or "O'quvchi"
 
-    keyboard = [[
-        InlineKeyboardButton(
-            "📚 MAKTAB AI ni ochish",
-            web_app=WebAppInfo(url=WEBAPP_URL)
-        )
-    ]]
+    keyboard = [
+        [InlineKeyboardButton("🚀 MAKTAB AI ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))],
+        [InlineKeyboardButton("📖 Qo'llanma", callback_data="help"),
+         InlineKeyboardButton("💬 Murojaat", url="https://t.me/maktabai_support")]
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        f"Salom, {name}! 👋\n\n"
-        "🎓 *MAKTAB AI* ga xush kelibsiz!\n\n"
-        "Bu O'zbekiston 1-11 sinf o'quvchilari uchun AI mentor.\n"
-        "• Darslik asosida tushuntiradi\n"
-        "• Sizning yoshingizga mos tilda gapiradi\n"
-        "• Test topshirishingizga yordam beradi\n\n"
-        "Quyidagi tugmani bosib boshlang! ⬇️",
+        f"Assalomu alaykum, *{name}*\\! 👋\n\n"
+        "🎓 *MAKTAB AI* — O'zbekistonning eng aqlli o'quv yordamchisi\\!\n\n"
+        "━━━━━━━━━━━━━━━━\n"
+        "✅ *1\\-11 sinf* barcha fanlar\n"
+        "✅ *Gemini AI* bilan real vaqt javoblari\n"
+        "✅ *O'zbek tilida* — sizning yoshingizga mos\n"
+        "✅ *Test va olimpiada* tayyorgarligи\n"
+        "✅ *Fayllar* — PDF va rasm yuklash\n"
+        "✅ *Ovozli* savol berish\n"
+        "━━━━━━━━━━━━━━━━\n\n"
+        "👇 Quyidagi tugmani bosing va boshlang\\!",
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [[InlineKeyboardButton("🚀 MAKTAB AI ni ochish", web_app=WebAppInfo(url=WEBAPP_URL))]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await update.message.reply_text(
-        "📚 *MAKTAB AI — Yordam*\n\n"
-        "/start — Botni ishga tushirish\n"
-        "/help — Yordam\n\n"
-        "Web ilovani ochish uchun /start buyrug'ini yuboring.",
-        parse_mode="Markdown"
+        "📚 *MAKTAB AI — Qo'llanma*\n\n"
+        "━━━━━━━━━━━━━━━━\n"
+        "🔹 /start — Botni ishga tushirish\n"
+        "🔹 /help — Ushbu yordam xabari\n\n"
+        "📱 *Qanday ishlatish:*\n"
+        "1\\. \"MAKTAB AI ni ochish\" tugmasini bosing\n"
+        "2\\. Sinfingizni tanlang \\(1\\-11\\)\n"
+        "3\\. Fanlingizni tanlang\n"
+        "4\\. AI bilan suhbat boshlang\\!\n\n"
+        "💡 *Maslahat:* PDF darslik yoki rasm yuklasangiz, AI uni tahlil qiladi\\.",
+        reply_markup=reply_markup,
+        parse_mode="MarkdownV2"
     )
+
+
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    if query.data == "help":
+        await help_cmd(update, context)
 
 
 def main():
@@ -60,6 +84,7 @@ def main():
             app = ApplicationBuilder().token(BOT_TOKEN).build()
             app.add_handler(CommandHandler("start", start))
             app.add_handler(CommandHandler("help", help_cmd))
+            app.add_handler(CallbackQueryHandler(button_handler))
             app.run_polling(drop_pending_updates=True)
         except Exception as e:
             logger.error(f"Bot xatosi: {e}")
