@@ -99,6 +99,16 @@ const GS = {
   }
 };
 
+/* Auto-seed demo data on first load (any page that loads this file) */
+(function(){
+  try{
+    if(GS.getGroups().length === 0){
+      const cu = JSON.parse(localStorage.getItem('maktabai_currentUser') || 'null');
+      GS.seedDemo(cu);
+    }
+  }catch(e){}
+})();
+
 /* Content moderation */
 const BANNED_WORDS=['porno','seks','eryotik','narkotik','terror','bomb','yasiliq','qotil','haqorat'];
 function moderateText(t){ const l=t.toLowerCase(); return BANNED_WORDS.some(w=>l.includes(w)); }

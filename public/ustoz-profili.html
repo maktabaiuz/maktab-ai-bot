@@ -135,6 +135,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#fbf8ff;color:#12183b}
 
 <script src="/js/components.js"></script>
 <script src="/js/marketplace.js"></script>
+<script src="/js/groups.js"></script>
 <script>
 const params = new URLSearchParams(location.search);
 const id = parseInt(params.get('id')) || 1;
@@ -228,33 +229,32 @@ function closeModal() { document.getElementById('pay-modal').classList.remove('o
 
 document.getElementById('pay-price').textContent = u.narx;
 
-/* ── My groups (teacher only) ── */
+/* ── My groups (groups.js auto-loaded above) ── */
 (function(){
   try{
-    const cu=JSON.parse(localStorage.getItem('maktabai_currentUser')||'null');
-    if(!cu||cu.role!=='teacher') return;
-    const card=document.getElementById('my-groups-card');
-    card.style.display='block';
-    const groups=JSON.parse(localStorage.getItem('mg_groups')||'[]');
-    const myGroups=groups.filter(g=>g.ownerId===String(cu.id));
-    const el=document.getElementById('my-groups-list');
+    const cu = JSON.parse(localStorage.getItem('maktabai_currentUser')||'null');
+    if(!cu || cu.role !== 'teacher') return;
+    const card = document.getElementById('my-groups-card');
+    card.style.display = 'block';
+    const myGroups = GS.getTeacherGroups(String(cu.id));
+    const el = document.getElementById('my-groups-list');
     if(!myGroups.length){
-      el.innerHTML='<div style="font-size:13px;color:#c7c4da;text-align:center;padding:12px">Hali guruh yo\'q</div>';
+      el.innerHTML = '<div style="font-size:13px;color:#c7c4da;text-align:center;padding:12px">Hali guruh yo\'q</div>';
       return;
     }
-    el.innerHTML=myGroups.slice(0,4).map(g=>{
-      const members=JSON.parse(localStorage.getItem('mg_members')||'[]').filter(m=>m.groupId===g.id&&m.status==='approved').length;
-      const pending=JSON.parse(localStorage.getItem('mg_members')||'[]').filter(m=>m.groupId===g.id&&m.status==='pending').length;
+    el.innerHTML = myGroups.slice(0,4).map(g=>{
+      const members = GS.getGroupMembers(g.id).filter(m=>m.status==='approved').length;
+      const pending = GS.getPending(g.id).length;
       return `<a href="/guruh-chat.html?id=${g.id}" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;text-decoration:none;color:#12183b;transition:background .15s;margin-bottom:6px" onmouseover="this.style.background='#f8f8fc'" onmouseout="this.style.background=''">
-        <div style="width:36px;height:36px;border-radius:10px;background:${g.color};display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:13px;color:#fff;flex-shrink:0">${(g.name||'G').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+        <div style="width:36px;height:36px;border-radius:10px;background:${g.color};display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:13px;color:#fff;flex-shrink:0">${initials(g.name)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.name}</div>
-          <div style="font-size:11px;color:#464557">${members} a'zo${pending?` · <span style="color:#f97316">${pending} so'rov</span>`:''}</div>
+          <div style="font-size:11px;color:#464557">${members} a'zo${pending?' · <span style="color:#f97316">'+pending+' so\'rov</span>':''}</div>
         </div>
         <span style="font-family:'Material Symbols Outlined';font-size:16px;color:#c7c4da">chevron_right</span>
       </a>`;
     }).join('');
-  }catch(e){}
+  }catch(e){ console.error('ustoz groups:', e); }
 })();
 
 // Mobile layout fix

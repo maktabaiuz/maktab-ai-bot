@@ -210,6 +210,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#fbf8ff;color:#12183b;h
 <!-- Sidebar overlay (mobile) -->
 <div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199"></div>
 
+<script src="/js/groups.js"></script>
 <script src="/js/chat.js"></script>
 <script>
 const tg = window.Telegram?.WebApp;
@@ -229,25 +230,27 @@ function setFan(fan) {
   closeSidebar();
 }
 
-/* Groups widget */
+/* Groups widget — groups.js auto-seeded above */
 (function(){
   try{
-    const cu=JSON.parse(localStorage.getItem('maktabai_currentUser')||'null');
-    if(!cu) return;
-    const uid=String(cu.id);
-    const members=JSON.parse(localStorage.getItem('mg_members')||'[]');
-    const groups=JSON.parse(localStorage.getItem('mg_groups')||'[]');
-    const myIds=members.filter(m=>m.userId===uid&&m.status==='approved').map(m=>m.groupId);
-    const myGroups=groups.filter(g=>myIds.includes(g.id)||(cu.role==='teacher'&&g.ownerId===uid));
+    const cu = JSON.parse(localStorage.getItem('maktabai_currentUser')||'null');
+    const uid = cu ? String(cu.id) : 's1'; // s1 = demo student
+    let myGroups = [];
+    if(cu && cu.role === 'teacher'){
+      myGroups = GS.getTeacherGroups(uid);
+    } else {
+      myGroups = GS.getUserGroups(uid);
+    }
+    if(!myGroups.length) myGroups = GS.getUserGroups('s1'); // fallback demo
     if(!myGroups.length) return;
-    document.getElementById('groups-widget').style.display='block';
-    const el=document.getElementById('groups-widget-list');
-    el.innerHTML=myGroups.slice(0,3).map(g=>`
+    document.getElementById('groups-widget').style.display = 'block';
+    const el = document.getElementById('groups-widget-list');
+    el.innerHTML = myGroups.slice(0,3).map(g=>`
       <a href="/guruh-chat.html?id=${g.id}" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;text-decoration:none;color:#12183b;transition:background .15s" onmouseover="this.style.background='rgba(75,59,255,.08)'" onmouseout="this.style.background=''">
-        <div style="width:24px;height:24px;border-radius:7px;background:${g.color};display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:9px;color:#fff;flex-shrink:0">${(g.name||'G').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+        <div style="width:24px;height:24px;border-radius:7px;background:${g.color};display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:9px;color:#fff;flex-shrink:0">${initials(g.name)}</div>
         <span style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.name}</span>
       </a>`).join('');
-  }catch(e){}
+  }catch(e){ console.error('groups widget:', e); }
 })();
 </script>
 </body>
