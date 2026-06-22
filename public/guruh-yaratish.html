@@ -162,6 +162,15 @@ function getCurrentUser(){ try{return JSON.parse(localStorage.getItem('maktabai_
 
 const cu=getCurrentUser();
 
+/* ── Strict teacher check ── */
+if(!cu || cu.role !== 'teacher'){
+  document.querySelector('.card-title').textContent = 'Kirish taqiqlanagan';
+  document.querySelector('.card-sub').textContent = 'Bu sahifa faqat ustozlar uchun';
+  document.querySelector('form').style.display = 'none';
+  document.getElementById('not-teacher-warn').style.display = 'block';
+  document.querySelector('.field').style.display = 'none'; // hide preview
+}
+
 /* Render color picker */
 let selectedColor=GROUP_COLORS[0].v;
 const picker=document.getElementById('color-picker');

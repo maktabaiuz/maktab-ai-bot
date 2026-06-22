@@ -129,6 +129,17 @@ body{font-family:'Inter',system-ui,sans-serif;background:#fbf8ff;color:#12183b;h
       <div class="nav-item" onclick="setFan('Biologiya')"><span style="font-size:18px">🧬</span>Biologiya</div>
     </nav>
 
+    <!-- Groups mini-widget -->
+    <div id="groups-widget" style="margin:0 8px 8px;padding:12px;background:#f0eeff;border-radius:12px;display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#4b3bff">
+          <span class="ms" style="font-size:16px">group</span>Guruhlarim
+        </div>
+        <a href="/guruhlar.html" style="font-size:11px;font-weight:700;color:#4b3bff;text-decoration:none">Barchasi →</a>
+      </div>
+      <div id="groups-widget-list" style="display:flex;flex-direction:column;gap:4px"></div>
+    </div>
+
     <div class="sidebar-footer">
       <button class="new-chat-btn" onclick="newChat()">
         <span class="ms" style="font-size:18px;color:#fff">add</span> Yangi dars boshlash
@@ -217,6 +228,27 @@ function setFan(fan) {
   updateContext();
   closeSidebar();
 }
+
+/* Groups widget */
+(function(){
+  try{
+    const cu=JSON.parse(localStorage.getItem('maktabai_currentUser')||'null');
+    if(!cu) return;
+    const uid=String(cu.id);
+    const members=JSON.parse(localStorage.getItem('mg_members')||'[]');
+    const groups=JSON.parse(localStorage.getItem('mg_groups')||'[]');
+    const myIds=members.filter(m=>m.userId===uid&&m.status==='approved').map(m=>m.groupId);
+    const myGroups=groups.filter(g=>myIds.includes(g.id)||(cu.role==='teacher'&&g.ownerId===uid));
+    if(!myGroups.length) return;
+    document.getElementById('groups-widget').style.display='block';
+    const el=document.getElementById('groups-widget-list');
+    el.innerHTML=myGroups.slice(0,3).map(g=>`
+      <a href="/guruh-chat.html?id=${g.id}" style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;text-decoration:none;color:#12183b;transition:background .15s" onmouseover="this.style.background='rgba(75,59,255,.08)'" onmouseout="this.style.background=''">
+        <div style="width:24px;height:24px;border-radius:7px;background:${g.color};display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:9px;color:#fff;flex-shrink:0">${(g.name||'G').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>
+        <span style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.name}</span>
+      </a>`).join('');
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
