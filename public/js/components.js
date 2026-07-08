@@ -78,6 +78,7 @@
     </a>
     <div id="_nlinks" style="display:flex;gap:4px;flex:1;align-items:center">
       ${lnk('index.html','Bosh sahifa')}
+      ${lnk('ixtiro.html','Ixtiro')}
       ${lnk('repetitorlar.html','Repetitorlar')}
       ${lnk('yangiliklar.html','Yangiliklar')}
       ${lnk('ota-ona-paneli.html','Ota-onalar')}
@@ -89,6 +90,7 @@
   </div>
   <div id="_nmob" style="display:none;padding:12px 24px 16px;border-top:1px solid #E7E9F4;background:#fff">
     <a href="/index.html" style="display:block;padding:12px 0;color:#464557;text-decoration:none;font-size:16px;font-weight:500;border-bottom:1px solid #E7E9F4">Bosh sahifa</a>
+    <a href="/ixtiro.html" style="display:block;padding:12px 0;color:#464557;text-decoration:none;font-size:16px;font-weight:500;border-bottom:1px solid #E7E9F4">Ixtiro</a>
     <a href="/repetitorlar.html" style="display:block;padding:12px 0;color:#464557;text-decoration:none;font-size:16px;font-weight:500;border-bottom:1px solid #E7E9F4">Repetitorlar</a>
     <a href="/yangiliklar.html" style="display:block;padding:12px 0;color:#464557;text-decoration:none;font-size:16px;font-weight:500;border-bottom:1px solid #E7E9F4">Yangiliklar</a>
     <a href="/ota-ona-paneli.html" style="display:block;padding:12px 0;color:#464557;text-decoration:none;font-size:16px;font-weight:500;border-bottom:1px solid #E7E9F4">Ota-onalar</a>
